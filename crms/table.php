@@ -6,6 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Canine Data</title>
+
     <!-- Bootstrap CSS -->
     <link href="css/bootstrap.min.css" rel="stylesheet">
     <!-- DataTables CSS -->
@@ -16,7 +17,7 @@
     <script src="js/jquery-3.7.1.min.js"></script>
     <!-- DataTables JS -->
     <script src="js/jquery.dataTables.min.js"></script>
-    
+
     <style>
         /* Highlight row on hover */
         .table tbody tr:hover {
@@ -34,9 +35,9 @@
         $(document).ready(function() {
             // Initialize DataTables
             $('.table').DataTable({
-                "paging": true,        
-                "ordering": true,      
-                "info": true           
+                "paging": true,
+                "ordering": true,
+                "info": true
             });
 
             // Row Click Highlighting
@@ -49,6 +50,7 @@
 </head>
 
 <body>
+
 <section class="my-5">
     <div class="container">
         <h2 class="text-center mb-4">Registered Canines</h2>
@@ -56,6 +58,7 @@
             <table class="table table-bordered table-hover text-center">
                 <thead class="table-dark">
                     <tr>
+                        <th scope="col">Town Name</th> <!-- Added Town Name -->
                         <th scope="col">Owner Name</th>
                         <th scope="col">Dogs Owned</th>
                         <th scope="col">Dogs Vaccinated</th>
@@ -65,26 +68,30 @@
                 <tbody>
                     <?php 
                     require_once "config.php";
-                    // SQL query to get the number of dogs owned and vaccinated per owner
-                    $sql_query = "SELECT 
-                                    dOwner, 
-                                    SUM(dOwned) AS total_dogs_owned, 
-                                    SUM(dVacc) AS total_dogs_vaccinated, 
-                                    dRegistrationDate 
-                                  FROM tblreg
-                                  GROUP BY dOwner, dRegistrationDate";
 
-                    // Execute the query and fetch results
+                    // Updated SQL query to join towns
+                    $sql_query = "
+                        SELECT 
+                            towns.dTown,
+                            tblreg.dOwner, 
+                            SUM(tblreg.dOwned) AS total_dogs_owned, 
+                            SUM(tblreg.dVacc) AS total_dogs_vaccinated, 
+                            tblreg.dRegistrationDate 
+                        FROM tblreg
+                        LEFT JOIN towns ON tblreg.dTownID = towns.id
+                        GROUP BY tblreg.dOwner, tblreg.dRegistrationDate, towns.dTown
+                    ";
+
                     if ($result = $conn->query($sql_query)) {
                         while ($row = $result->fetch_assoc()) { 
-                            // Get the number of dogs owned and vaccinated
+                            $Town = htmlspecialchars($row['dTown'] ?? 'Unknown');
+                            $Owner = htmlspecialchars($row['dOwner'] ?? 'Unknown');
                             $TotalDogsOwned = htmlspecialchars($row['total_dogs_owned'] ?? 0);
                             $TotalDogsVaccinated = htmlspecialchars($row['total_dogs_vaccinated'] ?? 0);
-                            $Owner = htmlspecialchars($row['dOwner'] ?? 'Unknown');
                             $RegistrationDate = htmlspecialchars($row['dRegistrationDate'] ?? 'N/A');
                     ?>
                     <tr>
-                        <!-- Display the count of dogs owned and vaccinated -->
+                        <td><?php echo $Town; ?></td>
                         <td><?php echo $Owner; ?></td>
                         <td><?php echo $TotalDogsOwned; ?></td>
                         <td><?php echo $TotalDogsVaccinated; ?></td>

@@ -11,6 +11,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $dFirstName = $_POST['firstName'];
     $dMiddleInitial = $_POST['middleInitial'];  // Middle name/initial (optional)
     $dLastName = $_POST['lastName'];
+    $dTownID = $_POST['townID'];  // get selected town ID
+
 
     // Full owner name can be combined for storage or further use
     if (!empty($dMiddleInitial)) {

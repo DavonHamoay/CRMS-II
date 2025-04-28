@@ -1,40 +1,35 @@
 <?php
-require_once "config.php";
-header('Content-Type: application/json');
+require 'config.php';
 
-$sql = "SELECT t.id AS town_id, t.dTown, t.dLatitude, t.dLongitude, 
-               COUNT(r.id) AS dog_count, 
-               SUM(CASE WHEN r.dVaccinated = 'Yes' THEN 1 ELSE 0 END) AS vaccinated_count 
-        FROM tblreg r 
-        JOIN towns t ON r.dTownID = t.id 
-        GROUP BY t.id, t.dTown, t.dLatitude, t.dLongitude";
+// Join towns and tblreg
+$sql = "
+    SELECT 
+        towns.dTown, 
+        towns.dLatitude, 
+        towns.dLongitude,
+        SUM(tblreg.dOwned) AS totalOwned,
+        SUM(tblreg.dVacc) AS totalVaccinated
+    FROM tblreg
+    LEFT JOIN towns ON tblreg.dTownID = towns.id
+    GROUP BY tblreg.dTownID
+";
 
 $result = $conn->query($sql);
-$data = [];
 
-while ($row = $result->fetch_assoc()) {
-    // Fetch individual dog details for this town
-    $town_id = $row['town_id'];
-    $dog_sql = "SELECT dName, dOwner, dVaccinated FROM tblreg WHERE dTownID = ?";
-    $stmt = $conn->prepare($dog_sql);
-    $stmt->bind_param("i", $town_id);
-    $stmt->execute();
-    $dog_result = $stmt->get_result();
+$zones = [];
 
-    $dogs = [];
-    while ($dog = $dog_result->fetch_assoc()) {
-        $dogs[] = [
-            "dName" => $dog["dName"],
-            "dOwner" => $dog["dOwner"],
-            "vaccinated" => ($dog["dVaccinated"] === 'Yes') ? true : false
+if ($result->num_rows > 0) {
+    while ($row = $result->fetch_assoc()) {
+        $zones[] = [
+            'dTown' => $row['dTown'] ?? 'Unknown',
+            'dLatitude' => $row['dLatitude'] ?? 9.5984, // fallback center if missing
+            'dLongitude' => $row['dLongitude'] ?? 124.0937,
+            'dog_count' => (int) $row['totalOwned'],
+            'vaccinated_count' => (int) $row['totalVaccinated']
         ];
     }
-
-    // Add the dog list to the town data
-    $row["dogs"] = $dogs;
-    $data[] = $row;
 }
 
-// Send the data in JSON format
-echo json_encode($data);
+header('Content-Type: application/json');
+echo json_encode($zones);
 ?>

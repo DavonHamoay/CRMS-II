@@ -1,17 +1,17 @@
 <?php
-// fetch_towns.php
-include('config.php');
+require 'config.php';
 
-// Fetch towns from the database
-$sql = "SELECT id, dTown FROM towns ORDER BY dTown";
+$sql = "SELECT id, dTown FROM towns ORDER BY dTown ASC";
 $result = $conn->query($sql);
 
+$towns = [];
+
 if ($result->num_rows > 0) {
-    // Output each town as an option
     while ($row = $result->fetch_assoc()) {
-        echo "<option value='" . $row['id'] . "'>" . htmlspecialchars($row['dTown']) . "</option>";
+        $towns[] = $row;
     }
-} else {
-    echo "<option value=''>No towns available</option>";
 }
+
+header('Content-Type: application/json');
+echo json_encode($towns);
 ?>
